@@ -42,7 +42,7 @@ public class PostController {
         return new PostResponseDto(post);
     }
     @DeleteMapping("/api/post/{id}")
-    public String deletePost(@PathVariable Long id, @PathVariable String password) {
+    public String deletePost(@PathVariable Long id, @RequestBody String password) {
         return postService.deletePost(id, password);
     }
 
