@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline Service</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500&display=swap">
+    <title>My First Blog</title>
+
+    <style>
+        /* 글작성 버튼 스타일 */
+        .edit-form {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .edit-form label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .edit-form input[type="text"],
+        .edit-form input[type="password"],
+        .edit-form textarea {
+            width: 85%;
+            padding: 6px 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .edit-form textarea {
+            height: 100px;
+            resize: both;
+            max-width: 100%;
+        }
+
+        .edit-form .half-width {
+            display: inline-block;
+            width: 49%;
+        }
+
+        .edit-form .half-width:nth-child(2) {
+            margin-left: 2%;
+        }
+
+        .edit-form button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 6px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .edit-form button[type="button"] {
+            background-color: #6c757d;
+        }
+
+        .edit-form button:hover {
+            opacity: 0.8;
+        }
+        /**/
+        .post-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .write-button {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+        .write-button:hover {
+            background-color: #3e8e41;
+        }
+        /* 글작성 폼 스타일 */
+        .write-form {
+            display: none;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+            padding: 16px;
+        }
+        .write-form input[type="text"],
+        .write-form input[type="password"],
+        .write-form textarea {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .write-form .half-width {
+            width: 20%;
+            display: inline-block;
+            margin-right: 16px;
+        }
+        .write-form button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+        .write-form button:hover {
+            background-color: #3e8e41;
+        }
+        /* 글제목 스타일 */
+        .title-link {
+            display: block;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            text-decoration: none;
+        }
+        .title-link:hover {
+            color: #4CAF50;
+        }
+        /* 컨테이너 스타일 */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .post-info .title-link {
+            margin-right: 16px;
+        }
+        .post-info .author-date {
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+
+
+            // HTML 문서를 로드할 때마다 실행합니다.
+            getMessages();
+        })
+        //연도.월.일.시간.분까지만나오게하기
+        function formatDate(dateString) {
+            let date = new Date(dateString);
+            let year = date.getFullYear();
+            let month = ("0" + (date.getMonth() + 1)).slice(-2);
+            let day = ("0" + date.getDate()).slice(-2);
+            let hour = ("0" + date.getHours()).slice(-2);
+            let minute = ("0" + date.getMinutes()).slice(-2);
+
+            return `${year}-${month}-${day} ${hour}:${minute}`;
+        }
+        //등록된 글들을 보여준다
+        function getMessages() {
+
+            $('#post-info').empty();
+
+
+            $.ajax({
+                type: "Post",
+                url: "/api/read",
+                data: {},
+                success: function (response) {
+                    for (let i = 0; i < response.length; i++) {
+                        let message = response[i];
+                        let id = message['id'];
+                        let title = message['title'];
+                        let username = message['username'];
+                        let contents = message['contents'];
+                        let modifiedAt = formatDate(message['modifiedAt']);
+                        addHTML(id,title, username, contents, modifiedAt);
+                    }
+                }
+            });
+        }
+        //등록된글들을 보여주는함수
+        function addHTML(id, title, username, contents, modifiedAt) {
+            let tempHtml = makeMessage(id, title, username, contents, modifiedAt);
+            $('#post-info').append(tempHtml);
+        }
+        //등록된글들을 보여주는함수
+        function makeMessage(id, title, username, contents, modifiedAt) {
+            const previewContent = contents.length > 150 ? contents.slice(0, 150) + '...' : contents;
+
+            return `
+        <div class="post-container">
+            <hr style="border: solid 2px gold;">
+            <div>
+                <h2>
+                    <span>${id}.번째글 </span>
+                    <a href="#content${id}" class="title-link" onclick="toggleContent('content${id}')">${title}</a>
+                </h2>
+                <div class="content" id="content${id}" style="display:none;">
+                    <p class="content-full" style="display:block;">${contents}</p>
+                </div>
+                <div class="edit-form-container"></div>
+                <p class="content-preview" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${previewContent}</p>
+                <span class="author-date"> ${username}</span>
+                <br>
+                <span class="author-date">  ${modifiedAt}</span>
+                <div class="content-buttons" style="display:block; text-align:right;">
+                    <button class="write-button" onclick="showEditForm(${id})">수정</button>
+                    <button class="write-button" onclick="deleteForm(${id})">삭제</button>
+                </div>
+            </div>
+            <hr style="border: solid 2px gold;">
+        </div>
+    `;
+        }
+        //클릭시 토글 내용확장
+        function toggleContent(id) {
+            const content = document.getElementById(id);
+            const contentPreview = content.parentElement.querySelector('.content-preview');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                contentPreview.style.display = 'none';
+            } else {
+                content.style.display = 'none';
+                contentPreview.style.display = 'block';
+            }
+        }
+        //클릭시 토글 내용확장
+        function toggleWriteForm() {
+            const writeForm = document.querySelector(".write-form");
+            if (writeForm.style.display === "block") {
+                writeForm.style.display = "none";
+            } else {
+                writeForm.style.display = "block";
+            }
+        }
+        function hideOriginalContent(contentId) {
+            const contentElement = document.querySelector(`#${contentId} .content-full`);
+            const titleElement = document.querySelector(`#${contentId}`).parentElement.querySelector('h2 a.title-link');
+            contentElement.style.display = 'none';
+            titleElement.style.display = 'none';
+        }
+        function showOriginalContent(contentId) {
+            const contentElement = document.querySelector(`#${contentId} .content-full`);
+            const titleElement = document.querySelector(`#${contentId}`).parentElement.querySelector('h2 a.title-link');
+            contentElement.style.display = 'block';
+            titleElement.style.display = 'block';
+        }
+        //새로운글 작성
+        function submitPost() {
+
+            let title = $('#title').val();
+            let username = $('#username').val();
+            let contents = $('#contents').val();
+            let password = $('#password').val();
+
+
+            let data = {'title':title,'username': username, 'contents': contents,'password':password};
+            $.ajax({
+                type: "POST",
+                url: "/api/create",
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function (response) {
+                    alert('메시지가 성공적으로 작성되었습니다.');
+                    window.location.reload();
+                }
+            });
+
+        }
+        //글작성취소
+        function cancelPost() {
+            toggleWriteForm();
+        }
+        //비밀번호확인
+        function checkPassword(id, callback) {
+            const pass = prompt('비밀번호를 입력하세요.');
+            if (!pass) return;
+
+            $.ajax({
+                type: "POST",
+                url: `/api/check_password/`+id,
+                contentType: "application/json",
+                data: JSON.stringify({'password': pass}),
+                dataType: 'json',
+                success: function (data) {
+                    if (data.result === pass) {
+                        callback();
+                    } else {
+                        alert('비밀번호가 일치하지 않습니다.');
+                    }
+                }
+            });
+        }
+        //글수정
+        function showEditForm(id) {
+            checkPassword(id, function () {
+                const formContainer = document.querySelector(`#content${id} + .edit-form-container`);
+                const contentElement = document.querySelector(`#content${id} .content-full`);
+                const titleElement = document.querySelector(`#content${id}`).parentElement.querySelector('h2 a.title-link');
+                const authorElement = document.querySelector(`#content${id}`).parentElement.querySelector('span.author-date');
+                const title = titleElement.textContent;
+                const username = authorElement.textContent.split('|')[0].trim();
+                const contents = contentElement.textContent;
+
+                const editForm = `
+            <div class="edit-form">
+                <label for="edit-title">제목</label>
+                <input type="text" id="edit-title" name="edit-title" required value="${title}">
+                <div class="half-width">
+                    <label for="edit-username">작성자</label>
+                    <input type="text" id="edit-username" name="edit-username" required value="${username}">
+                </div>
+                <div class="half-width">
+
+                </div>
+                <label for="edit-contents">내용</label>
+                <textarea id="edit-contents" name="edit-contents" rows="4" required>${contents}</textarea>
+                <div style="text-align:right;">
+                    <button type="submit" onclick="submitEdit('content${id}')">수정완료</button>
+                    <button type="button" onclick="cancelPost2('content${id}')">취소</button>
+                </div>
+            </div>
+        `;
+
+                formContainer.innerHTML = editForm;
+                hideOriginalContent(`content${id}`);
+            });
+        }
+        //글수정글불러오기
+        function submitEdit(contentId) {
+            let id = contentId.split('content')[1];  // 수정할 글의 id 값을 가져옵니다.
+            let title = $('#edit-title').val();
+            let username = $('#edit-username').val();
+            let contents = $('#edit-contents').val();
+
+            // 수정할 데이터를 JSON 형식으로 만듭니다.
+            let data = {'id': id, 'title': title, 'username': username, 'contents': contents};
+
+            // 서버로 데이터를 보냅니다.
+            $.ajax({
+                type: "PUT",
+                url: `/api/update/${id}`,
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function (response) {
+                    alert('수정이 완료되었습니다.');
+                    showOriginalContent(contentId);
+                    window.location.reload();
+                }
+            });
+        }
+        //글수정취소
+        function cancelPost2(contentId) {
+            const formContainer = document.querySelector(`#${contentId} + .edit-form-container`);
+            formContainer.innerHTML = '';
+            showOriginalContent(contentId);
+        }
+        //글삭제
+        function deleteForm (id){
+            checkPassword(id, function () {
+                $.ajax({
+                    type: 'DELETE',
+                    url: '/api/delete/' + id,
+                    success: function (response) {
+                        alert('메시지 삭제에 성공하였습니다.');
+                        window.location.reload();
+                    }
+                });
+            });
+        }
+
+
+
+
+    </script>
+
+
+</head>
+<body>
+<div class="container">
+    <h1 style="text-align:center;">My First Blog</h1>
+    <button class="write-button" onclick="toggleWriteForm()">글작성</button>
+<!--    <button class="write-button" onclick="passwd()">테스트</button>-->
+    <div class="write-form">
+        <h2 style="margin-top: 0;">글 작성</h2>
+        <form>
+            <label for="title">제목</label>
+            <input type="text" id="title" name="title" required >
+            <div class="half-width">
+                <label for="username">작성자</label>
+                <input type="text" id="username" name="username" required >
+            </div>
+            <div class="half-width">
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" name="password" required >
+                <br>
+            </div>
+            <br>
+
+            <label for="contents">내용</label>
+            <textarea id="contents" name="contents" rows="6" required placeholder="내용을입력하세요."></textarea>
+            <div style="text-align:right;">
+                <button type="submit" onclick="submitPost()">완료</button>
+                <button type="button" onclick="cancelPost()">취소</button>
+            </div>
+        </form>
+    </div>
+    <hr>
+    <div class="post-info" id="post-info">
+
+
+    </div>
+
+    <!-- 추가적인 글 내용은 여기에 추가할 수 있습니다. -->
+</div>
+</body>
+</html>
+
